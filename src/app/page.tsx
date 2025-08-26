@@ -24,7 +24,12 @@ export default function DistributorPage() {
 
   const handleFileSelect = (selectedFile: File | null) => {
     if (selectedFile) {
-      if (selectedFile.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || selectedFile.type === 'application/vnd.ms-excel') {
+      const allowedTypes = [
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-excel',
+        'text/csv'
+      ];
+      if (allowedTypes.includes(selectedFile.type)) {
         setFile(selectedFile);
         setStatus('idle');
         setMessage(null);
@@ -32,7 +37,7 @@ export default function DistributorPage() {
         toast({
           variant: 'destructive',
           title: "Invalid File Type",
-          description: "Please upload a valid Excel file (.xlsx, .xls).",
+          description: "Please upload a valid Excel or CSV file (.xlsx, .xls, .csv).",
         });
       }
     }
@@ -77,20 +82,20 @@ export default function DistributorPage() {
       toast({
           variant: 'destructive',
           title: "No File Selected",
-          description: "Please select an Excel file to process.",
+          description: "Please select an Excel or CSV file to process.",
         });
       return;
     }
 
     setStatus('processing');
-    setMessage('Reading your Excel file...');
+    setMessage('Reading your file...');
     setResultUrl(null);
 
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onload = async () => {
       try {
-        setMessage('AI is allocating numbers. This may take a moment...');
+        setMessage('Processing numbers. This may take a moment...');
         const base64File = reader.result as string;
         const result = await allocateNumbers({ excelFile: base64File });
         setResultUrl(result.updatedExcelFile);
@@ -131,7 +136,7 @@ export default function DistributorPage() {
             Distributor
           </CardTitle>
           <CardDescription className="text-muted-foreground pt-1">
-            Upload an Excel file to automatically allocate numbers to containers.
+            Upload an Excel or CSV file to automatically allocate numbers.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6">
@@ -153,7 +158,7 @@ export default function DistributorPage() {
                 ref={inputRef}
                 onChange={handleFileChange}
                 className="hidden"
-                accept=".xlsx, .xls"
+                accept=".xlsx, .xls, .csv"
                 disabled={status === 'processing'}
               />
               <div className="flex flex-col items-center justify-center space-y-2 text-center pointer-events-none">
@@ -161,7 +166,7 @@ export default function DistributorPage() {
                 <p className="text-lg text-foreground">
                   <span className="font-semibold text-primary">Click to upload</span> or drag and drop
                 </p>
-                <p className="text-sm text-muted-foreground">Supports: .xlsx, .xls</p>
+                <p className="text-sm text-muted-foreground">Supports: .xlsx, .xls, .csv</p>
               </div>
             </div>
             

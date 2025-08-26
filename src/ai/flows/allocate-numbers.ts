@@ -1,9 +1,9 @@
 'use server';
 /**
- * @fileOverview Allocates numbers to containers based on capacity and distribution numbers from an Excel file.
+ * @fileOverview Allocates numbers to containers based on capacity and distribution numbers from an Excel or CSV file.
  *
- * - allocateNumbers - A function that takes the Excel file as input and returns the updated Excel file with allocations.
- * - AllocateNumbersInput - The input type for the allocateNumbers function, which is the Excel file as a data URI.
+ * - allocateNumbers - A function that takes the file as input and returns the updated Excel file with allocations.
+ * - AllocateNumbersInput - The input type for the allocateNumbers function, which is the file as a data URI.
  * - AllocateNumbersOutput - The return type for the allocateNumbers function, which is the updated Excel file as a data URI.
  */
 
@@ -15,7 +15,7 @@ const AllocateNumbersInputSchema = z.object({
   excelFile: z
     .string()
     .describe(
-      'The Excel file containing container capacities and numbers to distribute, as a data URI that must include a MIME type and use Base64 encoding. Expected format: \'data:<mimetype>;base64,<encoded_data>\'.' // Corrected typo here
+      'The Excel or CSV file containing container capacities and numbers to distribute, as a data URI that must include a MIME type and use Base64 encoding. Expected format: \'data:<mimetype>;base64,<encoded_data>\'.'
     ),
 });
 export type AllocateNumbersInput = z.infer<typeof AllocateNumbersInputSchema>;
@@ -24,7 +24,7 @@ const AllocateNumbersOutputSchema = z.object({
   updatedExcelFile: z
     .string()
     .describe(
-      'The updated Excel file with allocated numbers for each container, as a data URI that must include a MIME type and use Base64 encoding. Expected format: \'data:<mimetype>;base64,<encoded_data>\'.' // Corrected typo here
+      'The updated Excel file with allocated numbers for each container, as a data URI that must include a MIME type and use Base64 encoding. Expected format: \'data:<mimetype>;base64,<encoded_data>\'.'
     ),
 });
 export type AllocateNumbersOutput = z.infer<typeof AllocateNumbersOutputSchema>;
@@ -40,19 +40,19 @@ const allocateNumbersFlow = ai.defineFlow(
     outputSchema: AllocateNumbersOutputSchema,
   },
   async input => {
-    // 1. Read the Excel file from the data URI
+    // 1. Read the file from the data URI
     const fileData = Buffer.from(
       input.excelFile.substring(input.excelFile.indexOf(',') + 1),
       'base64'
     );
 
-    // 2. Parse the Excel file using XLSX
+    // 2. Parse the file using XLSX (which also supports CSV)
     const workbook = XLSX.read(fileData, {type: 'buffer' });
     const sheetName = workbook.SheetNames[0]; // Assuming the data is in the first sheet
     const sheet = workbook.Sheets[sheetName];
     const jsonData = XLSX.utils.sheet_to_json(sheet);
 
-    // Assuming the Excel file has columns like 'Capacity' and 'ToDistribute'
+    // Assuming the file has columns like 'Capacity' and 'ToDistribute'
     // and the goal is to add a column 'Allocated'
 
     interface DataRow {
