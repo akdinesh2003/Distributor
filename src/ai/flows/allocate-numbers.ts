@@ -15,7 +15,7 @@ const AllocateNumbersInputSchema = z.object({
   excelFile: z
     .string()
     .describe(
-      "The Excel or CSV file containing container capacities and numbers to distribute, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+      "The Excel or CSV file containing container capacities and numbers to distribute, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'"
     ),
 });
 export type AllocateNumbersInput = z.infer<typeof AllocateNumbersInputSchema>;
@@ -57,8 +57,8 @@ const allocateNumbersFlow = ai.defineFlow(
     }
 
     // 3. Extract capacities and numbers to distribute from columns
-    const numbersToDistribute: number[] = data.map(row => row[0]).filter(n => n !== undefined && !isNaN(n));
-    const capacities: number[] = data.map(row => row[1]).filter(c => c !== undefined && !isNaN(c));
+    const numbersToDistribute: number[] = data.map(row => row[0]).filter(n => n !== undefined && !isNaN(n) && n !== null);
+    const capacities: number[] = data.map(row => row[1]).filter(c => c !== undefined && !isNaN(c) && c !== null);
 
     if (capacities.length === 0 || numbersToDistribute.length === 0) {
         throw new Error("File must contain at least two columns with numeric data for distribution and capacity.");
@@ -67,7 +67,6 @@ const allocateNumbersFlow = ai.defineFlow(
     // 4. Perform the allocation
     const allocationResults: any[] = [];
     for (const numberToDistribute of numbersToDistribute) {
-        const allocatedRow: {[key: string]: number} = {};
         const currentAllocation = new Array(capacities.length).fill(0);
 
         let remainingToDistribute = numberToDistribute;
@@ -84,7 +83,8 @@ const allocateNumbersFlow = ai.defineFlow(
             }
             if (!distributedInCycle) break; // Avoid infinite loops if all capacities are filled
         }
-
+        
+        const allocatedRow: {[key: string]: number} = {};
         capacities.forEach((_, index) => {
             allocatedRow[`Container ${index + 1}`] = currentAllocation[index];
         });
