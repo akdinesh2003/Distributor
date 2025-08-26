@@ -54,31 +54,24 @@ const allocateNumbersFlow = ai.defineFlow(
 
     if (data.length < 2) {
       throw new Error(
-        'The file must contain at least two rows: one for headers and one for data.'
+        'The file must contain at least two rows: one for headers/capacities and one for data.'
       );
     }
-
-    // 3. Extract headers and capacities from the first two rows.
+    
+    // 3. Extract headers and capacities.
     const headers = data[0].map(h => String(h));
-    const capacityData = data[1];
-
-    if (headers.length < 2) {
-        throw new Error('File must have at least two columns: one for capacity and one for the number to distribute.');
-    }
-
-    const toDistributeColumn = headers[headers.length - 1];
     const containerColumns = headers.slice(0, -1);
+    const toDistributeColumn = headers[headers.length - 1];
     
     const capacities: {[key: string]: number} = {};
     containerColumns.forEach((header, index) => {
-        const capacity = Number(capacityData[index]);
+        const capacity = Number(data[0][index]); // Capacities are in the first row
         if (!isNaN(capacity)) {
             capacities[header] = capacity;
         } else {
-            capacities[header] = 0; // Default capacity to 0 if not a valid number
+            capacities[header] = 0; 
         }
     });
-
 
     // 4. Process the data rows starting from the second row (index 1)
     const dataRows = data.slice(1);
@@ -89,14 +82,12 @@ const allocateNumbersFlow = ai.defineFlow(
       if (isNaN(numberToDistribute)) return row.reduce((acc, val, idx) => ({...acc, [headers[idx]]: val}), {});
 
       const newRow: any = {};
-      headers.forEach(header => (newRow[header] = '')); // Initialize row with empty strings
-      newRow[toDistributeColumn] = numberToDistribute;
-      
-      // Initialize allocated values to 0 for container columns
+       // Initialize allocated values to 0 for container columns
       containerColumns.forEach(col => {
         newRow[col] = 0;
       });
-
+      newRow[toDistributeColumn] = numberToDistribute; // Keep the original number to distribute
+     
       // Distribute the number using round-robin
       let remainingToDistribute = numberToDistribute;
       
@@ -117,7 +108,6 @@ const allocateNumbersFlow = ai.defineFlow(
           break;
         }
       }
-
       return newRow;
     });
 
