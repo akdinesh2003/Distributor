@@ -52,19 +52,22 @@ const allocateNumbersFlow = ai.defineFlow(
     const sheet = workbook.Sheets[sheetName];
     const data: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
     
-    if (data.length < 1) {
-      throw new Error('The file must contain at least one row of data.');
+    if (data.length < 2) {
+      throw new Error('The file must contain at least two rows of data: one for capacities and at least one for numbers to distribute.');
     }
 
-    // 3. Extract capacities and numbers to distribute from columns
-    const numbersToDistribute: number[] = data.map(row => row[0]).filter(n => n !== undefined && !isNaN(n) && n !== null);
-    const capacities: number[] = data.map(row => row[1]).filter(c => c !== undefined && !isNaN(c) && c !== null);
+    // 3. Extract capacities and numbers to distribute
+    const capacities: number[] = data[0].slice(0, -1).filter(c => typeof c === 'number');
+    const numbersToDistribute: number[] = data.slice(1).map(row => row[row.length - 1]).filter(n => typeof n === 'number');
 
-    if (capacities.length === 0 || numbersToDistribute.length === 0) {
-        throw new Error("File must contain at least two columns with numeric data for distribution and capacity.");
+    if (capacities.length === 0) {
+      throw new Error("The first row must contain numeric capacity values.");
+    }
+    if (numbersToDistribute.length === 0) {
+      throw new Error("No numeric values to distribute found in the last column of the subsequent rows.");
     }
     
-    // 4. Perform the allocation
+    // 4. Perform the allocation for each number
     const allocationResults: any[] = [];
     for (const numberToDistribute of numbersToDistribute) {
         const currentAllocation = new Array(capacities.length).fill(0);
@@ -81,7 +84,7 @@ const allocateNumbersFlow = ai.defineFlow(
                     distributedInCycle = true;
                 }
             }
-            if (!distributedInCycle) break; // Avoid infinite loops if all capacities are filled
+            if (!distributedInCycle) break; 
         }
         
         const allocatedRow: {[key: string]: number} = {};
