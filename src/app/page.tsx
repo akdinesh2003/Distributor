@@ -136,7 +136,7 @@ export default function DistributorPage() {
             Distributor
           </CardTitle>
           <CardDescription className="text-muted-foreground pt-1">
-            Upload a file with numbers to distribute and container capacities.
+            Upload a file with numbers to distribute in the first column and container capacities in the second column.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6">

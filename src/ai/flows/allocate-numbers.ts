@@ -56,17 +56,20 @@ const allocateNumbersFlow = ai.defineFlow(
       throw new Error('The file must contain at least one row of data.');
     }
 
-    // 3. Extract capacities and numbers to distribute
-    // The first row contains the capacities for the containers.
-    const capacities: number[] = data[0].filter(c => typeof c === 'number' && isFinite(c));
-    // The first column of each subsequent row contains the numbers to be distributed.
-    const numbersToDistribute: number[] = data.slice(1).map(row => row[0]).filter(n => typeof n === 'number' && isFinite(n));
+    // 3. Extract numbers to distribute and capacities from columns
+    const numbersToDistribute: number[] = data
+      .map(row => row[0])
+      .filter(n => typeof n === 'number' && isFinite(n));
+      
+    const capacities: number[] = data
+      .map(row => row[1])
+      .filter(c => typeof c === 'number' && isFinite(c));
 
-    if (capacities.length === 0) {
-        throw new Error("The first row of your file must contain the numeric capacity values for the containers.");
-    }
     if (numbersToDistribute.length === 0) {
-        throw new Error("The file must have numbers to distribute in the first column (from the second row onwards).");
+        throw new Error("The first column of your file must contain the numeric values to be distributed.");
+    }
+    if (capacities.length === 0) {
+        throw new Error("The second column of your file must contain the numeric capacity values for the containers.");
     }
     
     // 4. Perform the allocation for each number
@@ -87,11 +90,11 @@ const allocateNumbersFlow = ai.defineFlow(
                     distributedInCycle = true;
                 }
             }
-            // If a full cycle completes with no distribution, it means all containers are full.
             if (!distributedInCycle) break; 
         }
         
         const allocatedRow: {[key: string]: number} = {};
+        allocatedRow['To Distribute'] = numberToDistribute;
         capacities.forEach((_, index) => {
             allocatedRow[`Container ${index + 1}`] = currentAllocation[index];
         });
