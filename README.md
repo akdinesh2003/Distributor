@@ -1,25 +1,60 @@
-# Distributor
+# Distributor: Intelligent Number Allocation
 
-An intelligent tool to allocate numbers from an Excel or CSV file.
+A sleek and intelligent tool to effortlessly distribute numbers into containers based on defined capacities. Upload your Excel or CSV file, and let the Distributor handle the complex allocation logic for you, providing a perfectly formatted output file in seconds.
 
-This application allows you to upload an Excel or CSV file with container capacities and numbers to be distributed. It uses an AI-powered flow to allocate these numbers efficiently and provides a downloadable Excel file with the results.
+---
 
-## How to Use
+## ✨ Features
 
-1.  **Prepare your file**: Ensure your file has at least two columns. The default names are:
-    *   `Capacity`: The maximum capacity for each container.
-    *   `ToDistribute`: The numbers that need to be distributed among the containers.
-    Your file can be in `.xlsx`, `.xls`, or `.csv` format.
+*   **Smart Allocation Engine**: Utilizes a round-robin algorithm to distribute numbers as evenly as possible across all containers.
+*   **Capacity-Aware**: Strictly respects the maximum capacity of each container, ensuring no container is overfilled.
+*   **Simple File Upload**: A clean drag-and-drop interface for uploading your `.xlsx`, `.xls`, or `.csv` files.
+*   **Instant Download**: Get your processed file with the final allocations immediately after processing.
 
-2.  **Upload the file**: Drag and drop your file onto the upload area, or click to select it from your computer.
+---
 
-3.  **Process**: Click the "Process File" button. The application will process the data to allocate the numbers to containers, ensuring no capacity is exceeded.
+## ⚙️ How It Works: File Structure
 
-4.  **Download**: Once processing is complete, a download button will appear. Click it to get your updated Excel file with a new `Allocated` column showing the distribution.
+To use the Distributor, your Excel or CSV file **must** be structured in a specific way:
 
-## Tech Stack
+1.  **Container Capacities (First Row)**: The very first row of your file must contain the maximum numeric capacity for each container. These will be your column headers in the final output file.
+
+2.  **Numbers to Distribute (Last Column)**: The values that you want to allocate must be in the **last column** of your sheet. Each number in this column will be processed and will result in a corresponding row in the output file.
+
+### Example File (`input.xlsx`)
+
+Here is an example of a correctly formatted input file. The values `20, 20, 10...` in the first row are the capacities, and `100, 81, 63...` in the last column are the numbers to be distributed.
+
+| A  | B  | C  | D  | E  | F  | G   |
+|----|----|----|----|----|----|-----|
+| 20 | 20 | 10 | 30 | 10 | 10 | 100 |
+|    |    |    |    |    |    | 81  |
+|    |    |    |    |    |    | 63  |
+|    |    |    |    |    |    | 44  |
+|    |    |    |    |    |    | 21  |
+|    |    |    |    |    |    | 10  |
+
+---
+
+## 🚀 How to Use
+
+1.  **Prepare Your File**: Make sure your Excel or CSV file is structured according to the rules above.
+2.  **Upload**: Drag and drop your file onto the upload area, or click to select it from your computer.
+3.  **Process**: Click the "Process File" button. The application will read your capacities and numbers, and perform the smart allocation.
+4.  **Download**: Once processing is complete, a "Download Allocated File" button will appear. Click it to save your new Excel file with the results.
+
+---
+
+## 💻 Tech Stack
 
 *   **Framework**: Next.js
-*   **AI**: Google Genkit
+*   **AI/Logic**: Genkit
 *   **Styling**: Tailwind CSS & shadcn/ui
-*   **Deployment**: Firebase App Hosting
+*   **File Processing**: `xlsx` library
+
+---
+
+## 👤 Author
+
+*   **[Your Name]** - [Your Link](https://example.com)
+
