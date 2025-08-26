@@ -56,5 +56,5 @@ Here is an example of a correctly formatted input file. The values `20, 20, 10..
 
 ## 👤 Author
 
-*   **[Your Name]** - [Your Link](https://example.com)
+*   AK DINESH - https://github.com/akdinesh2003
 
