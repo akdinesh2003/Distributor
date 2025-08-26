@@ -52,19 +52,21 @@ const allocateNumbersFlow = ai.defineFlow(
     const sheet = workbook.Sheets[sheetName];
     const data: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
     
-    if (data.length < 2) {
-      throw new Error('The file must contain at least two rows: a header row for capacities and at least one data row.');
+    if (data.length < 1) {
+      throw new Error('The file must contain at least one row of data.');
     }
 
     // 3. Extract capacities and numbers to distribute
+    // The first row contains the capacities for the containers.
     const capacities: number[] = data[0].filter(c => typeof c === 'number' && isFinite(c));
+    // The first column of each subsequent row contains the numbers to be distributed.
     const numbersToDistribute: number[] = data.slice(1).map(row => row[0]).filter(n => typeof n === 'number' && isFinite(n));
 
     if (capacities.length === 0) {
-        throw new Error("The first row must contain numeric capacity values for the containers.");
+        throw new Error("The first row of your file must contain the numeric capacity values for the containers.");
     }
     if (numbersToDistribute.length === 0) {
-        throw new Error("The first column (from the second row onwards) must contain the numeric values to be distributed.");
+        throw new Error("The file must have numbers to distribute in the first column (from the second row onwards).");
     }
     
     // 4. Perform the allocation for each number
