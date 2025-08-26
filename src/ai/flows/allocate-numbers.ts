@@ -46,46 +46,48 @@ const allocateNumbersFlow = ai.defineFlow(
       'base64'
     );
 
-    // 2. Parse the file using XLSX, converting to an array of objects
+    // 2. Parse the file using XLSX, converting to an array of arrays
     const workbook = XLSX.read(fileData, {type: 'buffer'});
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
-    const data: any[] = XLSX.utils.sheet_to_json(sheet);
+    const data: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
     
     if (data.length < 1) {
       throw new Error('The file must contain at least one row of data.');
     }
 
-    // 3. Extract capacities and numbers to distribute
-    const capacities: number[] = data.map(row => row.Capacity).filter(c => c !== undefined && !isNaN(c));
-    const numbersToDistribute: number[] = data.map(row => row.ToDistribute).filter(n => n !== undefined && !isNaN(n));
-    
+    // 3. Extract capacities and numbers to distribute from columns
+    const numbersToDistribute: number[] = data.map(row => row[0]).filter(n => n !== undefined && !isNaN(n));
+    const capacities: number[] = data.map(row => row[1]).filter(c => c !== undefined && !isNaN(c));
+
     if (capacities.length === 0 || numbersToDistribute.length === 0) {
-        throw new Error("File must contain 'Capacity' and 'ToDistribute' columns with numeric data.");
+        throw new Error("File must contain at least two columns with numeric data for distribution and capacity.");
     }
     
     // 4. Perform the allocation
     const allocationResults: any[] = [];
-    for (const number of numbersToDistribute) {
+    for (const numberToDistribute of numbersToDistribute) {
         const allocatedRow: {[key: string]: number} = {};
-        capacities.forEach((_, index) => {
-            allocatedRow[`Container ${index + 1}`] = 0;
-        });
+        const currentAllocation = new Array(capacities.length).fill(0);
 
-        let remainingToDistribute = number;
-        while(remainingToDistribute > 0) {
+        let remainingToDistribute = numberToDistribute;
+        while (remainingToDistribute > 0) {
             let distributedInCycle = false;
             for (let i = 0; i < capacities.length; i++) {
                 if (remainingToDistribute <= 0) break;
 
-                if (allocatedRow[`Container ${i + 1}`] < capacities[i]) {
-                    allocatedRow[`Container ${i + 1}`]++;
+                if (currentAllocation[i] < capacities[i]) {
+                    currentAllocation[i]++;
                     remainingToDistribute--;
                     distributedInCycle = true;
                 }
             }
             if (!distributedInCycle) break; // Avoid infinite loops if all capacities are filled
         }
+
+        capacities.forEach((_, index) => {
+            allocatedRow[`Container ${index + 1}`] = currentAllocation[index];
+        });
         allocationResults.push(allocatedRow);
     }
     

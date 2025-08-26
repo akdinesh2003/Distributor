@@ -104,7 +104,7 @@ export default function DistributorPage() {
       } catch (error) {
         setStatus('error');
         const errorMessage = error instanceof Error ? error.message : "An unknown error occurred during processing.";
-        setMessage(`An error occurred: ${errorMessage}. Please ensure your file has 'Capacity' and 'ToDistribute' columns.`);
+        setMessage(`An error occurred: ${errorMessage}`);
         setResultUrl(null);
       }
     };
@@ -136,7 +136,7 @@ export default function DistributorPage() {
             Distributor
           </CardTitle>
           <CardDescription className="text-muted-foreground pt-1">
-            Upload a file with 'Capacity' and 'ToDistribute' columns.
+            Upload a file with numbers to distribute and container capacities.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6">
