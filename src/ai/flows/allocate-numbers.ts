@@ -53,26 +53,27 @@ const allocateNumbersFlow = ai.defineFlow(
     const data: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
     
     if (data.length < 2) {
-      throw new Error('The file must contain at least two rows of data: one for capacities and at least one for numbers to distribute.');
+      throw new Error('The file must contain at least two rows: a header row for capacities and at least one data row.');
     }
 
     // 3. Extract capacities and numbers to distribute
-    const capacities: number[] = data[0].slice(0, -1).filter(c => typeof c === 'number');
-    const numbersToDistribute: number[] = data.slice(1).map(row => row[row.length - 1]).filter(n => typeof n === 'number');
+    const capacities: number[] = data[0].filter(c => typeof c === 'number' && isFinite(c));
+    const numbersToDistribute: number[] = data.slice(1).map(row => row[0]).filter(n => typeof n === 'number' && isFinite(n));
 
     if (capacities.length === 0) {
-      throw new Error("The first row must contain numeric capacity values.");
+        throw new Error("The first row must contain numeric capacity values for the containers.");
     }
     if (numbersToDistribute.length === 0) {
-      throw new Error("No numeric values to distribute found in the last column of the subsequent rows.");
+        throw new Error("The first column (from the second row onwards) must contain the numeric values to be distributed.");
     }
     
     // 4. Perform the allocation for each number
     const allocationResults: any[] = [];
+
     for (const numberToDistribute of numbersToDistribute) {
         const currentAllocation = new Array(capacities.length).fill(0);
-
         let remainingToDistribute = numberToDistribute;
+        
         while (remainingToDistribute > 0) {
             let distributedInCycle = false;
             for (let i = 0; i < capacities.length; i++) {
@@ -84,6 +85,7 @@ const allocateNumbersFlow = ai.defineFlow(
                     distributedInCycle = true;
                 }
             }
+            // If a full cycle completes with no distribution, it means all containers are full.
             if (!distributedInCycle) break; 
         }
         
