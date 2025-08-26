@@ -104,7 +104,7 @@ export default function DistributorPage() {
       } catch (error) {
         setStatus('error');
         const errorMessage = error instanceof Error ? error.message : "An unknown error occurred during processing.";
-        setMessage(errorMessage);
+        setMessage(`An error occurred: ${errorMessage}. Please ensure your file has 'Capacity' and 'ToDistribute' columns.`);
         setResultUrl(null);
       }
     };
@@ -136,7 +136,7 @@ export default function DistributorPage() {
             Distributor
           </CardTitle>
           <CardDescription className="text-muted-foreground pt-1">
-            Upload an Excel or CSV file to automatically allocate numbers.
+            Upload a file with 'Capacity' and 'ToDistribute' columns.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6">

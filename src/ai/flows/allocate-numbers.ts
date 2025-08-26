@@ -46,82 +46,52 @@ const allocateNumbersFlow = ai.defineFlow(
       'base64'
     );
 
-    // 2. Parse the file using XLSX, converting to an array of arrays
+    // 2. Parse the file using XLSX, converting to an array of objects
     const workbook = XLSX.read(fileData, {type: 'buffer'});
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
-    const data: any[][] = XLSX.utils.sheet_to_json(sheet, {header: 1});
+    const data: any[] = XLSX.utils.sheet_to_json(sheet);
+    
+    if (data.length < 1) {
+      throw new Error('The file must contain at least one row of data.');
+    }
 
-    if (data.length < 2) {
-      throw new Error(
-        'The file must contain at least two rows: one for headers/capacities and one for data.'
-      );
+    // 3. Extract capacities and numbers to distribute
+    const capacities: number[] = data.map(row => row.Capacity).filter(c => c !== undefined && !isNaN(c));
+    const numbersToDistribute: number[] = data.map(row => row.ToDistribute).filter(n => n !== undefined && !isNaN(n));
+    
+    if (capacities.length === 0 || numbersToDistribute.length === 0) {
+        throw new Error("File must contain 'Capacity' and 'ToDistribute' columns with numeric data.");
     }
     
-    // 3. Extract headers and capacities.
-    const headers = data[0].map(h => String(h));
-    const containerColumns = headers.slice(0, -1);
-    const toDistributeColumn = headers[headers.length - 1];
+    // 4. Perform the allocation
+    const allocationResults: any[] = [];
+    for (const number of numbersToDistribute) {
+        const allocatedRow: {[key: string]: number} = {};
+        capacities.forEach((_, index) => {
+            allocatedRow[`Container ${index + 1}`] = 0;
+        });
+
+        let remainingToDistribute = number;
+        while(remainingToDistribute > 0) {
+            let distributedInCycle = false;
+            for (let i = 0; i < capacities.length; i++) {
+                if (remainingToDistribute <= 0) break;
+
+                if (allocatedRow[`Container ${i + 1}`] < capacities[i]) {
+                    allocatedRow[`Container ${i + 1}`]++;
+                    remainingToDistribute--;
+                    distributedInCycle = true;
+                }
+            }
+            if (!distributedInCycle) break; // Avoid infinite loops if all capacities are filled
+        }
+        allocationResults.push(allocatedRow);
+    }
     
-    const capacities: {[key: string]: number} = {};
-    containerColumns.forEach((header, index) => {
-        const capacity = Number(data[0][index]); // Capacities are in the first row
-        if (!isNaN(capacity)) {
-            capacities[header] = capacity;
-        } else {
-            capacities[header] = 0; 
-        }
-    });
-
-    // 4. Process the data rows starting from the second row (index 1)
-    const dataRows = data.slice(1);
-    const updatedData = dataRows.map(row => {
-      let numberToDistribute = Number(
-        row[headers.indexOf(toDistributeColumn)]
-      );
-      if (isNaN(numberToDistribute)) return row.reduce((acc, val, idx) => ({...acc, [headers[idx]]: val}), {});
-
-      const newRow: any = {};
-       // Initialize allocated values to 0 for container columns
-      containerColumns.forEach(col => {
-        newRow[col] = 0;
-      });
-      newRow[toDistributeColumn] = numberToDistribute; // Keep the original number to distribute
-     
-      // Distribute the number using round-robin
-      let remainingToDistribute = numberToDistribute;
-      
-      while (remainingToDistribute > 0) {
-        let distributedInCycle = false;
-        for (const col of containerColumns) {
-          if (remainingToDistribute <= 0) break;
-          
-          const capacity = capacities[col] || 0;
-          if (newRow[col] < capacity) {
-            newRow[col]++;
-            remainingToDistribute--;
-            distributedInCycle = true;
-          }
-        }
-        // If a full cycle completes with no distribution, break to prevent infinite loops
-        if (!distributedInCycle) {
-          break;
-        }
-      }
-      return newRow;
-    });
-
-    // Add headers back for the new sheet
-    const finalData = [
-      headers,
-      ...updatedData.map(row =>
-        headers.map(h => (row[h] !== undefined ? row[h] : ''))
-      ),
-    ];
-
     // 5. Create a new Excel workbook with the updated data
     const newWorkbook = XLSX.utils.book_new();
-    const newSheet = XLSX.utils.aoa_to_sheet(finalData);
+    const newSheet = XLSX.utils.json_to_sheet(allocationResults);
     XLSX.utils.book_append_sheet(newWorkbook, newSheet, 'Allocations');
 
     // 6. Convert the new Excel workbook to a data URI
