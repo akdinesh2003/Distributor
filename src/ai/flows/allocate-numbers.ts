@@ -56,20 +56,22 @@ const allocateNumbersFlow = ai.defineFlow(
       throw new Error('The file must contain at least one row of data.');
     }
 
-    // 3. Extract numbers to distribute and capacities from columns
+    // 3. Extract capacities from the first row and numbers to distribute from the last column
+    const capacities: number[] = data[0]
+        .slice(0, -1)
+        .map(Number)
+        .filter(n => !isNaN(n) && isFinite(n));
+
+    if (capacities.length === 0) {
+        throw new Error("The first row of your file must contain the numeric capacity values for the containers in the first N-1 columns.");
+    }
+    
     const numbersToDistribute: number[] = data
-      .map(row => row[0])
-      .filter(n => typeof n === 'number' && isFinite(n));
-      
-    const capacities: number[] = data
-      .map(row => row[1])
-      .filter(c => typeof c === 'number' && isFinite(c));
+      .map(row => Number(row[row.length - 1]))
+      .filter(n => !isNaN(n) && isFinite(n));
 
     if (numbersToDistribute.length === 0) {
-        throw new Error("The first column of your file must contain the numeric values to be distributed.");
-    }
-    if (capacities.length === 0) {
-        throw new Error("The second column of your file must contain the numeric capacity values for the containers.");
+      throw new Error('The last column of your file must contain the numeric values to be distributed.');
     }
     
     // 4. Perform the allocation for each number
@@ -94,10 +96,10 @@ const allocateNumbersFlow = ai.defineFlow(
         }
         
         const allocatedRow: {[key: string]: number} = {};
-        allocatedRow['To Distribute'] = numberToDistribute;
         capacities.forEach((_, index) => {
             allocatedRow[`Container ${index + 1}`] = currentAllocation[index];
         });
+        allocatedRow['Total'] = numberToDistribute;
         allocationResults.push(allocatedRow);
     }
     
