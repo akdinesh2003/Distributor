@@ -46,40 +46,61 @@ const allocateNumbersFlow = ai.defineFlow(
       'base64'
     );
 
-    // 2. Parse the file using XLSX (which also supports CSV)
+    // 2. Parse the file using XLSX, converting to an array of arrays
     const workbook = XLSX.read(fileData, {type: 'buffer' });
-    const sheetName = workbook.SheetNames[0]; // Assuming the data is in the first sheet
+    const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
-    const jsonData = XLSX.utils.sheet_to_json(sheet);
+    const data: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-    // Assuming the file has columns like 'Capacity' and 'ToDistribute'
-    // and the goal is to add a column 'Allocated'
-
-    interface DataRow {
-      Capacity?: number;
-      ToDistribute?: number;
-      Allocated?: number;
+    if (data.length < 2) {
+      throw new Error("The file must contain at least two rows: one for headers/capacities and one for data.");
     }
-
-    const updatedJsonData: DataRow[] = jsonData.map((row: any) => {
-      const capacity = Number(row.Capacity) || 0;
-      const toDistribute = Number(row.ToDistribute) || 0;
-      let allocated = 0;
-
-      // Basic allocation logic: allocate up to the capacity
-      if (toDistribute > 0) {
-        allocated = Math.min(capacity, toDistribute);
-      }
-
-      return {...row, Allocated: allocated};
+    
+    // 3. Extract capacities and headers
+    const headers = data[0];
+    const capacities: {[key: string]: number} = {};
+    const capacityRow = data[0]; // Capacities are in the first row
+    
+    headers.forEach((header, index) => {
+        const capacity = Number(capacityRow[index]);
+        if (!isNaN(capacity)) {
+            capacities[header] = capacity;
+        }
     });
 
-    // 4. Create a new Excel workbook with the updated data
+    const toDistributeColumn = headers[headers.length - 1];
+    const containerColumns = headers.slice(0, -1);
+
+    // 4. Process the data rows
+    const dataRows = data.slice(1);
+    const updatedData = dataRows.map(row => {
+        let numberToDistribute = Number(row[headers.indexOf(toDistributeColumn)]);
+        if (isNaN(numberToDistribute)) return row; // Skip if not a valid number
+
+        const newRow: any = {};
+        headers.forEach(header => newRow[header] = ""); // Initialize row
+        newRow[toDistributeColumn] = numberToDistribute;
+
+        // Distribute the number
+        containerColumns.forEach(col => {
+            const capacity = capacities[col] || 0;
+            const valueToAllocate = Math.min(numberToDistribute, capacity);
+            newRow[col] = valueToAllocate;
+            numberToDistribute -= valueToAllocate;
+        });
+
+        return newRow;
+    });
+
+    // Add headers back for the new sheet
+    const finalData = [headers, ...updatedData.map(row => headers.map(h => row[h] !== undefined ? row[h] : ""))];
+
+    // 5. Create a new Excel workbook with the updated data
     const newWorkbook = XLSX.utils.book_new();
-    const newSheet = XLSX.utils.json_to_sheet(updatedJsonData);
+    const newSheet = XLSX.utils.aoa_to_sheet(finalData);
     XLSX.utils.book_append_sheet(newWorkbook, newSheet, 'Allocations');
 
-    // 5. Convert the new Excel workbook to a data URI
+    // 6. Convert the new Excel workbook to a data URI
     const newFileData = XLSX.write(newWorkbook, {
       bookType: 'xlsx',
       type: 'base64',
